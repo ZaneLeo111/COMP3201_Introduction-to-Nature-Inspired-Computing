@@ -13,77 +13,123 @@ import java.util.*;
  *
  * MH DOC_20.23.03.06
  */
-public class Queens2
-{
+public class Queens2 {
     private static int boardSize = 10;
-    
+
     // inverts the order of a series of genes in the genotype
-    public static Integer[] inversionMutate(Integer[] genotype, double p)
-    {
-        // YOUR CODE GOES HERE
-        // DUMMY CODE TO REMOVE: (pretends to invert first test genotype)
-        genotype = new Integer[]{ 1, 2, 3, 8, 7, 6, 5, 4, 9, 10 };
-        // END OF YOUR CODE
-        
+    public static Integer[] inversionMutate(Integer[] genotype, double p) {
+        double pro = Math.random();
+        // System.out.println("pro: " + pro);
+
+        if (pro <= p) {
+
+            Random rd = new Random();
+            int index1 = rd.nextInt(genotype.length);
+            int index2 = rd.nextInt(genotype.length);
+            while (index1 > index2) {
+                index2 = rd.nextInt(genotype.length);
+            }
+            // print out the two points
+            // System.out.println("point1: " + index1 + " point2: " + index2);
+
+            while (index1 < index2) {
+                int temp = genotype[index1];
+                genotype[index1] = genotype[index2];
+                genotype[index2] = temp;
+                index1++;
+                index2--;
+            }
+        }
+
         return genotype;
     }
-    
-    /* performs fitness-proportional parent selection
+
+    /*
+     * performs fitness-proportional parent selection
      * also known as 'roulette wheel' selection
      * selects two parents that are different to each other
      */
-    public static Integer[][] rouletteSelect(Integer[][] population)
-    {
-        Integer [][] parents = new Integer [2][boardSize];
-        
-        // YOUR CODE GOES HERE
-        // DUMMY CODE TO REMOVE:
-        parents[0] = new Integer[]{ 10, 6, 4, 2, 8, 5, 9, 1, 3, 7 };
-        parents[1] = new Integer[]{ 9, 4, 3, 1, 2, 5, 10, 7, 8, 6 };
-        // END OF YOUR CODE
-        
+    public static Integer[][] rouletteSelect(Integer[][] population) {
+        Integer[][] parents = new Integer[2][boardSize];
+
+        Random rand = new Random();
+        double[] fitnessValues = new double[population.length];
+        double totalFitness = 0.0;
+
+        for (int i = 0; i < population.length; i++) {
+            fitnessValues[i] = Queens.measureFitness(population[i]);
+            totalFitness += fitnessValues[i];
+        }
+
+        for (int i = 0; i < 2; i++) {
+            double sum = 0.0;
+            int index = -1;
+            double rouletteValue = rand.nextDouble() * totalFitness;
+
+            for (int j = 0; j < population.length; j++) {
+                sum += fitnessValues[j];
+                if (sum >= rouletteValue) {
+                    index = j;
+                    break;
+                }
+            }
+
+            if (index != -1) {
+                parents[i] = population[index].clone();
+            }
+        }
+
+        if (Arrays.equals(parents[0], parents[1])) {
+            return rouletteSelect(population);
+        }
+
         return parents;
     }
-    
-    /* creates a new population through λ + μ survivor selection
+
+    /*
+     * creates a new population through λ + μ survivor selection
      * given a population of size n, and a set of children of size m
      * this method will measure the fitness of all individual in the
      * combined population, and return the n fittest individuals
      * as the new population
      */
-    public static Integer[][] survivorSelection(Integer[][] population, Integer [][] children)
-    {
-        Integer [][] newPop = new Integer [10][10];
-        
-        // YOUR CODE GOES HERE
-        // DUMMY CODE TO REMOVE:
-        newPop [0] = new Integer[]{ 10, 6, 4, 2, 8, 5, 9, 1, 3, 7 };
-        newPop [1] = new Integer[]{ 9, 4, 3, 1, 2, 5, 10, 7, 8, 6 };
-        newPop [2] = new Integer[]{ 9, 4, 3, 1, 2, 5, 10, 7, 8, 6 };
-        newPop [3] = new Integer[]{ 9, 5, 6, 10, 8, 7, 1, 3, 2, 4 };
-        newPop [4] = new Integer[]{ 9, 5, 6, 10, 8, 7, 1, 3, 2, 4 };
-        newPop [5] = new Integer[]{ 3, 2, 7, 4, 10, 1, 8, 9, 6, 5 };
-        newPop [6] = new Integer[]{ 10, 9, 8, 6, 7, 2, 3, 4, 1, 5 };
-        newPop [7] = new Integer[]{ 7, 8, 9, 1, 10, 2, 3, 4, 5, 6 };
-        newPop [8] = new Integer[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        newPop [9] = new Integer[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        
-        
-        // END OF YOUR CODE
-        
+    public static Integer[][] survivorSelection(Integer[][] population, Integer[][] children) {
+        Integer[][] newPop = new Integer[10][10];
+
+        ArrayList<Integer[]> combinedPop = new ArrayList<>();
+        combinedPop.addAll(Arrays.asList(population));
+        combinedPop.addAll(Arrays.asList(children));
+
+        combinedPop.sort((a, b) -> {
+            double fitnessA = Queens.measureFitness(a);
+            double fitnessB = Queens.measureFitness(b);
+            return Double.compare(fitnessB, fitnessA);
+        });
+
+        for (int i = 0; i < 10; i++) {
+            newPop[i] = combinedPop.get(i);
+        }
+
         return newPop;
     }
-    
+
     // counts the number of unique genotypes in the population
-    public static int genoDiversity(Integer[][] population)
-    {
+    public static int genoDiversity(Integer[][] population) {
         int uniqueTypes = 0;
-        
-        // YOUR CODE GOES HERE
-        // DUMMY CODE TO REMOVE:
-        uniqueTypes = 6;
-        // END OF YOUR CODE
-        
+
+        for (int i = 0; i < population.length; i++) {
+            boolean isUnique = true;
+            for (int j = 0; j < i; j++) {
+                if (Arrays.equals(population[i], population[j])) {
+                    isUnique = false;
+                    break;
+                }
+            }
+            if (isUnique) {
+                uniqueTypes++;
+            }
+        }
         return uniqueTypes;
     }
+
 }
